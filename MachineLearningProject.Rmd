@@ -1,0 +1,86 @@
+---
+title: "Machine Learning Project"
+author: "Helena"
+date: "12/28/2021"
+output: html_document
+---
+  
+## Project Summary 
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. The data for this project come from this source: http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har. It also references to the paper of Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013.
+
+In this project, the goal is to use data from accelerometers on the belt, forearm, arm, and dumbbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in the following 5 different ways:  
+* Class A: exactly according to the specification  
+* Class B: throwing the elbows to the front  
+* Class C: lifting the dumbbell only halfway  
+* Class D: lowering the dumbbell only halfway  
+* Class E: throwing the hips to the front  
+  
+A model will be built to predict the manner in which people did the exercise.  This is the "classe" variable in the training set.  This report will describe how the model is built, how cross validation is done, what the expected out of sample error is, and why the choices are made.  The prediction model will then be used to predict 20 different test cases.  
+
+## Set Up Global Configuration 
+
+Set up echo = TRUE to show all codes for the work in this analysis document, and cache = TRUE to improve efficiency on re-running.  The libraries caret, ranger, and dplyr are used for this project.  
+
+```{r setup, include=TRUE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+library(caret)
+library(ranger)
+library(dplyr)
+```
+  
+## Analysis 
+
+First, the data is loaded using the following R codes:  
+
+```{r loadingData }
+download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv", "training.csv")
+
+download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv", "testing.csv")
+
+training <- read.csv("training.csv")
+testing <- read.csv("testing.csv")
+```
+  
+Then, the following R codes are used to review the fields in the data.  Also, by using the paper referenced above, 38 features were selected for the modeling including all raw accelerometer, gyroscope and magnetometer readings in belt, arm, dumbbell and forearm.  In addition, the roll in the belt and pitch in the forearm are also included.  The same extraction will also be done to the 20 test cases.  
+
+```{r analyzeData}
+names(training)
+
+traindata <- select(training, 8, 37:45, 60:68, 113:121, 123, 151:160)
+testdata <- select(testing, 8, 37:45, 60:68, 113:121, 123, 151:160)
+```
+  
+## Building Model 
+
+For cross validation, the data are split into 2 data sets: trainds and valds, for training and validation by using 70% and 30% of the training data respectively. A model is built using "ranger" method with number of trees limited to 100 to optimize running time and potential computer CPU and memory constraints.  
+
+```{r trainData}
+set.seed(12343)
+
+inTrain <- createDataPartition(y=traindata$classe, p=0.7, list=FALSE)
+trainds <- traindata[inTrain,]
+valds <- traindata[-inTrain,]
+
+modfit <- train(classe~., data=trainds, method="ranger", num.trees=100)
+
+modfit
+```
+  
+## Validation
+
+From above, the accuracy of the model is over 98%.  Therefore, it is used against the validation data to find out of sample error.  
+
+```{r validateData}
+predict_val <- predict(modfit, newdata = valds)
+confusionMatrix(predict_val, as.factor(valds$classe))
+```
+  
+## Prediction 
+
+From the confusion matrix above, the model, which uses 38 data features identified, appears to have high accuracy for prediction.  Thus, the model is used to predict the class of the 20 test cases with results below.  
+
+```{r predictData}
+predictions <- predict(modfit, newdata = testdata)
+table(predictions, testdata$problem_id)
+```
