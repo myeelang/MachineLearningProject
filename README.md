@@ -17,4 +17,4 @@ https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
 
 The data for this project come from this source: http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har. 
 
-Project HTML Report can be viewed using this link: https://htmlpreview.github.io/?https://
+Project HTML Report can be viewed using this link: https://htmlpreview.github.io/?https://github.com/myeelang/MachineLearningProject/blob/main/MachineLearningProject.html
